@@ -1,54 +1,45 @@
-/*
- * Copyright 2017 Charlie Black
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 ext {
     version = '1.0.0.SNAPSHOT'
-    geodeVersion = '1.1.1'
-    metricsVersion = '3.2.2'
-    springBootVersion = '1.5.1.RELEASE'
+    gemfireVersion = '10.1.2'
+    micrometerVersion = '1.12.1'
 }
-
 
 repositories {
     mavenCentral()
-}
-buildscript {
-    repositories {
-        mavenCentral()
-    }
-    dependencies {
-        classpath "org.springframework.boot:spring-boot-gradle-plugin:1.5.1.RELEASE"
+    maven {
+        credentials {
+            username "$broadcomUser"
+            password "$broadcomPassword"
+        }
+        url "https://packages.broadcom.com/artifactory/gemfire"
     }
 }
 
-description = 'Geode exposing a bunch of metrics'
+description = 'GemFire exposing a bunch of metrics'
 
-apply plugin: "idea"
+apply plugin: 'idea'
 apply plugin: 'java'
-apply plugin: 'spring-boot'
 
 
-group = 'demo.geode'
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
+group = 'demo.gemfire'
 
 dependencies {
-    compile "org.apache.geode:geode-core:$geodeVersion"
-    compile "io.dropwizard.metrics:metrics-core:$metricsVersion"
+    // Mark GemFire as compileOnly (provided by the GemFire environment)
+    compileOnly "com.vmware.gemfire:gemfire-core:$gemfireVersion"
+    compileOnly "com.vmware.gemfire:gemfire-logging:$gemfireVersion"
+
+    implementation ("io.micrometer:micrometer-registry-jmx:$micrometerVersion"){
+        exclude group: 'org.slf4j'
+        // Exclude other SLF4J bindings if present
+    }
 }
 
-bootRun.workingDir = new File(buildDir.absolutePath + '/bootRun')
-bootRun.workingDir.mkdirs()
+// This task copies the runtime dependencies (which excludes compileOnly)
+task copyDependencies(type: Copy) {
+    // You can change “$buildDir/lib” to another path if you wish.
+    from configurations.runtimeClasspath
+    into "$buildDir/lib"
+}
+
+build.dependsOn copyDependencies
+jar.dependsOn copyDependencies

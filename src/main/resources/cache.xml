@@ -7,6 +7,6 @@
     <cache-server port="0"/>
     <cache-server port="0"/>
     <initializer>
-        <class-name>demo.geode.DemoInitializer</class-name>
+        <class-name>demo.gemfire.DemoInitializer</class-name>
     </initializer>
 </cache>

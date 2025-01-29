@@ -1,54 +1,98 @@
-## Exposing Geode Statistics as JMX
+# Exposing GemFire Statistics via JMX
 
-Geode currently exposes tons of metrics via JMX.  However there are still hundreds more that could be exposed.   In this project we will expose some of those metrics via JMX so the information can be consumed in many ways.   
+GemFire currently exposes a wide range of metrics through Java Management Extensions (JMX). However, there are still hundreds of additional metrics that can be exposed. This project aims to extend the existing capabilities by exposing more GemFire metrics via JMX, enabling diverse methods for consuming this information.
 
-##  What does a statistics definition look like?
+## Table of Contents
 
-To get access to all of the metrics Geode exposes there is a tool that displays the metrics file.    We can see that tool in action below.
+- [Introduction](#introduction)
+- [Understanding Statistics Definitions](#understanding-statistics-definitions)
+- [Specifying Metrics for Display](#specifying-metrics-for-display)
+- [Project Example and Output](#project-example-and-output)
+- [Resources](#resources)
 
-![vsd](/images/vsd.png)
+## Introduction
 
-The documentation on how to view the files:
+**GemFire** is a robust in-memory data grid that provides extensive metrics for monitoring and management. While many metrics are available through JMX, this project enhances GemFire's monitoring capabilities by exposing additional metrics via JMX. This allows for more comprehensive monitoring and integration with various tools and dashboards.
 
-https://cwiki.apache.org/confluence/pages/viewpage.action?pageId=61309918
+### GemFire VSD showing some of the categories of metrics GemFire offers
+![GemFire Metrics Overview](/images/vsd.png)
 
-##  How do we specify a metric for display
+## Understanding Statistics Definitions
 
-For the example I thought it would be good to show a customizable example.   In this example I make use of regular expressions to make it easier to expose metrics in bulk.
+To access all the metrics that GemFire exposes, you can use a specialized tool called VSD that displays the "gfs" metrics file. This tool helps you explore and understand the available metrics.
 
-To define which metrics to expose I used a plain ole properties file.   The format of the property and value is:
+### Viewing Metrics Files
+
+The tool's functionality is demonstrated in the image above. For detailed documentation on how to use this tool and view the metrics files, refer to the [VMware GemFire VSD Documentation](https://techdocs.broadcom.com/us/en/vmware-tanzu/data-solutions/tanzu-gemfire/10-1/gf/tools_modules-vsd-chapter_overview.html).
+
+## Specifying Metrics for Display
+
+To effectively expose specific metrics, you can define them using a customizable approach with regular expressions. This allows for bulk exposure of metrics based on patterns, making the configuration both flexible and scalable.
+
+### Configuration via Properties File
+
+Metrics are specified using a plain properties file with the following format:
 
 ```
-<Metric Type>:[Optional Resource RegEx |]<Metric RegEx>[,<Subsequent Metric RegEx> ]
+<Metric Type>:[Optional Resource RegEx |]<Metric RegEx>[,<Subsequent Metric RegEx>]
 ```
 
-Example:
-```
+#### Example Configuration
+
+```properties
 VMMemoryPoolStats: .*Survivor.*|current.*,foo
 ```
-In the above example *VMMemoryPoolStats* is the metric type.   
 
-For the property value we have the metric resource and the metric regular expressions separated via the "|" char.   
+- **Metric Type**: `VMMemoryPoolStats`
+- **Property Value**: Consists of the metric resource and metric regular expressions separated by a `|` character.
 
-If the pipe symbol isn't there then the parser will treat the metric resource name as the regular expression ".\*"
+**Details:**
 
-The metric regular expressions are a comma separated list.
+- If the `|` symbol is absent, the parser defaults the metric resource name to the regular expression `.*`.
+- Metric regular expressions are specified as a comma-separated list.
 
-That means for the VMMemoryPoolStats the app is going to expose all of the resource have the word Survivor spaces and only the metrics that start with current and the statistic foo.
+**Explanation of the Example:**
 
-I am sure there are going to be problems with some regular expressions and how the parser looks for commas.   So feel free to change up the implementation to meet the needs of your application.
+- **Resource Regex**: `.*Survivor.*` — Exposes all resources containing the word "Survivor".
+- **Metric Regexes**: `current*` and `foo` — Exposes metrics that start with "current" or exactly match "foo".
 
-## Project example with output
+**Note:** Regular expressions must be carefully crafted to avoid parsing issues, especially with commas. Feel free to adjust the implementation to suit your application's requirements.
 
-Lets see this in action!
+## Project Example and Output
 
-For this example I am interested in all of the VMStats and some of the "Client Cache Server Statistics".  Namely I am interested in any statistic that starts with current and acceptsInProgress.
+Let's walk through an example to see how this works in practice.
 
-expose_metrics.properties:
-```
+### Example Scenario
+
+In this example, we focus on two specific statistics from `StatSampler`:
+
+1. **delayDuration**: Measures the period between recording stats. This value should be relatively stable with minor variations (jitter). Significant jitter may indicate infrastructure issues affecting CPU access and timer accuracy.
+2. **sampleTime**: Represents the time GemFire takes to write the array of stats to disk.
+    - **Typical Values**:
+        - **Direct Attached NVMe Drives**: Often zero.
+        - **Virtualized Storage**: Single-digit milliseconds.
+    - **High Values**: Tens to hundreds of milliseconds may indicate storage layer issues.
+
+### Configuration File (`expose_metrics.properties`)
+
+```properties
 VMStats: .*
 VMMemoryPoolStats: .*Survivor.*|current.*
+StatSampler: delayDuration,sampleTime
 CacheServerStats: current.*,acceptsInProgress
 ```
-Java Mission Control of process:
-![vsd](/images/jmc.png)
+
+### Visual Representation
+
+The following image shows the VisualVM process monitoring the exposed metrics:
+
+![VisualVM Process Monitoring](/images/visualvm.png)
+
+## Resources
+
+- [Apache GemFire Metrics Documentation](https://cwiki.apache.org/confluence/pages/viewpage.action?pageId=61309918)
+- [VisualVM Tool](https://visualvm.github.io/)
+
+---
+
+Feel free to contribute to this project by submitting issues or pull requests. Your feedback and improvements are highly appreciated!

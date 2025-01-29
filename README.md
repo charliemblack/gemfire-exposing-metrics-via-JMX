@@ -90,7 +90,7 @@ The following image shows the VisualVM process monitoring the exposed metrics:
 
 ## Resources
 
-- [Apache GemFire Metrics Documentation](https://cwiki.apache.org/confluence/pages/viewpage.action?pageId=61309918)
+- [GemFire Metrics Documentation](https://techdocs.broadcom.com/us/en/vmware-tanzu/data-solutions/tanzu-gemfire/10-1/gf/tools_modules-vsd-chapter_overview.html)
 - [VisualVM Tool](https://visualvm.github.io/)
 
 ---
